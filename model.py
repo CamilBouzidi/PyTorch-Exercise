@@ -6,7 +6,7 @@ from torchvision.transforms import ToTensor
 
 # Hyperparameters
 learning_rate = 1e-3
-batch_size = 128
+batch_size = 512
 epochs = 1000
 
 class NeuralNetwork(nn.Module):
@@ -28,11 +28,16 @@ class NeuralNetwork(nn.Module):
 
 
 class NeuralNetworkManager:
+    def __init__(self, device):
+        self.device = device
+    
     def training_loop(self, dataloader, model, loss_fn, optimizer):
         size = len(dataloader.dataset)
         # training mode
         model.train()
         for batch, (X, y) in enumerate(dataloader):
+            X, y = X.to(self.device), y.to(self.device)  # Move data to the correct device
+
             # prediction and loss
             pred = model(X)
             loss = loss_fn(pred, y)
@@ -56,6 +61,7 @@ class NeuralNetworkManager:
         # Evaluate model (no gradients mode for memory usage purposes)
         with torch.no_grad():
             for X, y in dataloader:
+                X, y = X.to(self.device), y.to(self.device)  # Move data to the correct device
                 pred = model(X)
                 test_loss += loss_fn(pred, y).item()
                 correct += (pred.argmax(1) == y).type(torch.float).sum().item()
@@ -67,13 +73,13 @@ class NeuralNetworkManager:
     # Script to run and optimize the model:
     def run_and_optimize(self):
         # exit if GPU not used
-        # if not torch.cuda.is_available():
-        #     print("cuda not available")
-        #     print(f"{torch.cuda.get_device_name(0)}")
-        #     return
+        if not torch.cuda.is_available():
+            print("cuda not available")
+            print(f"{torch.cuda.get_device_name(0)}")
+            return
         
-        # print("cude available")
-        # print(f"{torch.cuda.get_device_name(0)}")
+        print("cude available")
+        print(f"{torch.cuda.get_device_name(0)}")
         # Generate training and test data
         training_data = datasets.CIFAR10(
             root="data",
@@ -90,11 +96,11 @@ class NeuralNetworkManager:
         )
 
         # use the dataloader class
-        training_dataloader = DataLoader(training_data, batch_size=64)
-        testing_dataloader = DataLoader(testing_data, batch_size=64)
+        training_dataloader = DataLoader(training_data, batch_size=512)
+        testing_dataloader = DataLoader(testing_data, batch_size=512)
 
-        # Create the model
-        model = NeuralNetwork()
+        # Create the model using the selected device.
+        model = NeuralNetwork().to(device)
         print(model)
 
         # Initialize the loss function
@@ -111,6 +117,3 @@ class NeuralNetworkManager:
 
         # Save the model
         torch.save(model.state_dict(), 'model_weights.pth')
-
-hey = NeuralNetworkManager()
-hey.run_and_optimize()
