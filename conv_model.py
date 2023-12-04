@@ -48,7 +48,7 @@ class ConvNeuralNetworkManager:
         for epoch in range(2):
             # keep track of the running loss
             running_loss = 0.0
-            for batch, (X, y) in enumerate(dataloader, 0):
+            for batch, (X, y) in enumerate(dataloader):
                 X, y = X.to(self.device), y.to(self.device)  # Move data to the correct device
 
                 # zero parameter gradients
@@ -64,7 +64,7 @@ class ConvNeuralNetworkManager:
 
                 running_loss += loss.item()
                 if batch % 2000 == 1999:    # print every 2000 mini-batches
-                    print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}')
+                    print(f'[{epoch + 1}, {batch + 1:5d}] loss: {running_loss / 2000:.3f}')
                     running_loss = 0.0
         print(f"Finished training across {epoch+1} epochs.")
     
@@ -121,14 +121,12 @@ class ConvNeuralNetworkManager:
             training_data,
             batch_size=batch_size,
             shuffle=True,
-            num_workers=2
         )
 
         testing_dataloader = DataLoader(
             testing_data,
             batch_size=batch_size,
             shuffle=False,
-            num_workers=2
         )
 
         classes = ('plane', 'car', 'bird', 'cat',
