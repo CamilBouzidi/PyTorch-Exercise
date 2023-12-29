@@ -75,7 +75,7 @@ def use_linear_model():
 
 def use_conv_model():
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    batch_size = 4
+    batch_size = 64
     if retrain_model:
         manager = ConvNeuralNetworkManager(device)
         manager.run_and_optimize()

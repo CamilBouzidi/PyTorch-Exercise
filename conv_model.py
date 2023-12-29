@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from torchvision import datasets
 import torchvision.transforms as transforms
 import torch.nn.functional as F
@@ -11,8 +11,8 @@ import torch.nn.functional as F
 
 # Hyperparameters
 learning_rate = 1e-3
-batch_size = 4
-epochs = 1000
+batch_size = 64
+epochs = 100
 
 class ConvNeuralNetwork(nn.Module):
     def __init__(self):
@@ -69,6 +69,20 @@ class ConvNeuralNetworkManager:
         print(f"Finished training across {epoch+1} epochs.")
     
 
+    def validation_loop(self, dataloader):
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for data in dataloader:
+                images, labels = data
+                outputs = net(images)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+        print('Accuracy of the network on the validation images: %d %%' % (
+        100 * correct / total))
+
     def testing_loop(self, dataloader, model, loss_fn):
         # evaluation mode
         model.eval()
@@ -100,8 +114,17 @@ class ConvNeuralNetworkManager:
         print(f"{torch.cuda.get_device_name(0)}")
 
         # Use tensors of normalized range [-1,1]
-        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-        # Generate training and test data
+
+        transform_list = [
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            transforms.RandomRotation(30),
+            transforms.RandomResizedCrop(224),
+            transforms.Lambda(lambda x: transforms.functional.adjust_contrast(x, contrast_factor=2))
+        ]
+        transform = transforms.Compose(transform_list)
+        
+        # Generate training, validation and test data
         training_data = datasets.CIFAR10(
             root='./data', 
             train=True,
@@ -116,9 +139,20 @@ class ConvNeuralNetworkManager:
             transform=transform
         )
 
-        # use the dataloader for both training and testing data
+        # Use a 80/20 split for training/validation
+        training_data_size = int( 0.8 * len(training_data))
+        validation_data_size = len(training_data) - training_data_size
+        training_data, validation_data = random_split(training_data, [training_data_size, validation_data_size])
+
+        # use the dataloader for training, validation and testing data
         training_dataloader = DataLoader(
             training_data,
+            batch_size=batch_size,
+            shuffle=True,
+        )
+
+        validation_dataloader = DataLoader(
+            validation_data,
             batch_size=batch_size,
             shuffle=True,
         )
@@ -145,6 +179,7 @@ class ConvNeuralNetworkManager:
         for t in range(epochs):
             print(f"Epoch {t+1}\n-------------------------------")
             self.training_loop(training_dataloader, model, loss_fn, optimizer)
+            self.validation_loop(validation_dataloader)
             self.testing_loop(testing_dataloader, model, loss_fn)
         print("Done!")
 
