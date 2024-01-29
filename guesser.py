@@ -75,7 +75,7 @@ def use_linear_model():
 
 def use_conv_model():
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    batch_size = 64
+    batch_size = 4
     if retrain_model:
         manager = ConvNeuralNetworkManager(device)
         manager.run_and_optimize()
@@ -115,8 +115,12 @@ def use_conv_model():
     print(predicted_label)
 
 
-if use_convNN:
-    use_conv_model()
-else:
-    use_linear_model()
+def main():
+    if use_convNN:
+        use_conv_model()
+    else:
+        use_linear_model()
+
+if __name__ == "__main__":
+    main()
     

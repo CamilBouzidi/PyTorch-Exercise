@@ -11,8 +11,8 @@ import torch.nn.functional as F
 
 # Hyperparameters
 learning_rate = 1e-3
-batch_size = 64
-epochs = 100
+batch_size = 4
+epochs = 50
 
 class ConvNeuralNetwork(nn.Module):
     def __init__(self):
@@ -69,19 +69,22 @@ class ConvNeuralNetworkManager:
         print(f"Finished training across {epoch+1} epochs.")
     
 
-    def validation_loop(self, dataloader):
-        correct = 0
-        total = 0
+    def validation_loop(self, dataloader, model, loss_fn):
+        # evaluation mode
+        model.eval()
+        size = len(dataloader.dataset)
+        num_batches = len(dataloader)
+        val_loss, correct = 0, 0
         with torch.no_grad():
-            for data in dataloader:
-                images, labels = data
-                outputs = net(images)
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
+            for X, y in dataloader:
+                X, y = X.to(self.device), y.to(self.device)  # Move data to the correct device
+                pred = model(X)
+                val_loss += loss_fn(pred, y).item()
+                correct += (pred.argmax(1) == y).type(torch.float).sum().item()
 
-        print('Accuracy of the network on the validation images: %d %%' % (
-        100 * correct / total))
+        val_loss /= num_batches
+        correct /= size
+        print(f"Validation error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {val_loss:>8f} \n")
 
     def testing_loop(self, dataloader, model, loss_fn):
         # evaluation mode
@@ -113,16 +116,11 @@ class ConvNeuralNetworkManager:
         print("cude available")
         print(f"{torch.cuda.get_device_name(0)}")
 
-        # Use tensors of normalized range [-1,1]
-
-        transform_list = [
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        transform = transforms.Compose([
             transforms.RandomRotation(30),
-            transforms.RandomResizedCrop(224),
-            transforms.Lambda(lambda x: transforms.functional.adjust_contrast(x, contrast_factor=2))
-        ]
-        transform = transforms.Compose(transform_list)
+            transforms.RandomResizedCrop(32),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),])
         
         # Generate training, validation and test data
         training_data = datasets.CIFAR10(
@@ -179,7 +177,7 @@ class ConvNeuralNetworkManager:
         for t in range(epochs):
             print(f"Epoch {t+1}\n-------------------------------")
             self.training_loop(training_dataloader, model, loss_fn, optimizer)
-            self.validation_loop(validation_dataloader)
+            self.validation_loop(validation_dataloader, model, loss_fn)
             self.testing_loop(testing_dataloader, model, loss_fn)
         print("Done!")
 
