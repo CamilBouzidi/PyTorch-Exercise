@@ -154,3 +154,4 @@ cython_debug/
 # Custom
 data/
 .vscode/settings.json
+.vscode/launch.json

@@ -9,7 +9,13 @@ With learning_rate = 1e-3, batch_size = 4, epochs = 50:
             self.fc3 = nn.Linear(84, 10)
 
         Results:
-            Validation error:
-                Accuracy: 43.7%, Avg loss: 1.581223
-            Test error:
-            Accuracy: 43.4%, Avg loss: 1.590385
+            Run 1:
+                Validation error:
+                    Accuracy: 43.7%, Avg loss: 1.581223
+                Test error:
+                    Accuracy: 43.4%, Avg loss: 1.590385
+            Run 2 (Additional Transforms):
+                Validation error: 
+                    Accuracy: 39.8%, Avg loss: 1.669266
+                Test error:
+                    Accuracy: 39.4%, Avg loss: 1.678332

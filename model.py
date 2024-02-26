@@ -116,4 +116,4 @@ class NeuralNetworkManager:
         print("Done!")
 
         # Save the model
-        torch.save(model.state_dict(), 'model_weights.pth')
+        torch.save(model.state_dict(), f'base_model_weights.pth')
