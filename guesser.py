@@ -9,7 +9,7 @@ import torchvision.datasets as datasets
 
 retrain_model = True
 available_models = ["basic", "conv1", "conv2" "convnext", 'all']
-model_to_use = "convnext"
+model_to_use = "conv2"
 
 device = (
             "cuda"
@@ -164,7 +164,7 @@ def main():
         use_linear_model()
     elif model_to_use == available_models[1]:
         use_conv_model(1)
-    elif model_to_use == available_models[2]:
+    elif model_to_use == "conv2":
         use_conv_model(2)
     elif model_to_use == "convnext":
         use_convnext_model()

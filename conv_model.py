@@ -15,7 +15,7 @@ batch_size = 4
 epochs = 50
 
 class ConvNeuralNetwork(nn.Module):
-    def __init__(self, version = 1):
+    def __init__(self, version = 2):
         super().__init__()
         self.layers_version = version
         # Each image has 3 color channels
@@ -28,10 +28,15 @@ class ConvNeuralNetwork(nn.Module):
             self.fc3 = nn.Linear(84, 10)
         else:
             self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
+            self.bn1 = nn.BatchNorm2d(32)
             self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
+            self.bn2 = nn.BatchNorm2d(64)
             self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
+            self.bn3 = nn.BatchNorm2d(128)
+            self.conv4 = nn.Conv2d(128, 256, 3, padding=1)
+            self.bn4 = nn.BatchNorm2d(256)
             self.pool = nn.MaxPool2d(2, 2)
-            self.fc1 = nn.Linear(128 * 4 * 4, 512)
+            self.fc1 = nn.Linear(64 * 4 * 4, 512)
             self.fc2 = nn.Linear(512, 256)
             self.fc3 = nn.Linear(256, 10)
             self.dropout = nn.Dropout(0.2)
@@ -46,9 +51,10 @@ class ConvNeuralNetwork(nn.Module):
             x = F.relu(self.fc2(x))
             x = self.fc3(x)
         else:
-            x = self.pool(F.relu(self.batch_norm(self.conv1(x))))
-            x = self.pool(F.relu(self.batch_norm(self.conv2(x))))
-            x = self.pool(F.relu(self.batch_norm(self.conv3(x))))
+            x = self.pool(F.relu(self.bn1(self.conv1(x))))
+            x = self.pool(F.relu(self.bn2(self.conv2(x))))
+            x = self.pool(F.relu(self.bn3(self.conv3(x))))
+            x = self.pool(F.relu(self.bn4(self.conv4(x))))
             x = torch.flatten(x, 1) # flatten all dimensions except batch
             x = self.dropout(F.relu(self.fc1(x)))
             x = self.dropout(F.relu(self.fc2(x)))
@@ -138,13 +144,12 @@ class ConvNeuralNetworkManager:
         print(f"{torch.cuda.get_device_name(0)}")
 
         transform = transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
-            transforms.RandomRotation(30),
             transforms.RandomResizedCrop(32),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(30),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),])
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
         
         # Generate training, validation and test data
         training_data = datasets.CIFAR10(
